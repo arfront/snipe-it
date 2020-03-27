@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\Helper;
+use App\Http\Transformers\ConsumablesTransformer;
 use App\Models\Company;
 use App\Models\Consumable;
 use App\Models\Setting;
@@ -222,7 +223,10 @@ class ConsumablesController extends Controller
             return redirect()->route('consumables.index')->with('error', trans('admin/consumables/message.does_not_exist'));
         }
         $this->authorize('checkout', $consumable);
-        return view('consumables/checkout', compact('consumable'));
+        // 获取可用数量
+        $remaining = (new ConsumablesTransformer)->transformConsumable($consumable)['remaining'];
+
+        return view('consumables/checkout', compact('consumable', 'remaining'));
     }
 
     /**
@@ -251,6 +255,26 @@ class ConsumablesController extends Controller
             return redirect()->route('checkout/consumable', $consumable)->with('error', trans('admin/consumables/message.checkout.user_does_not_exist'));
         }
 
+        // 检查提交数量
+        $num = Input::get('num');
+        $max_num = $_POST['max_num'];
+
+        if (isset($num)) if (!is_numeric($num)) {
+            return redirect()->route('checkout/consumable', $consumable)->with('error', '请输入数字');
+        } elseif ($num <= $max_num) {
+            while ($num-1) {
+                $consumable->users()->attach($consumable->id, [
+                    'consumable_id' => $consumable->id,
+                    'user_id' => $admin_user->id,
+                    'assigned_to' => e(Input::get('assigned_to'))
+                ]);
+                $num--;
+            }
+        } elseif ($num > $max_num) {
+            return redirect()->route('checkout/consumable', $consumable)->with('error', '请注意库存数量！！');
+        }
+
+
         // Update the consumable data
         $consumable->assigned_to = e(Input::get('assigned_to'));
 
@@ -259,6 +283,7 @@ class ConsumablesController extends Controller
             'user_id' => $admin_user->id,
             'assigned_to' => e(Input::get('assigned_to'))
         ]);
+
 
         $logaction = $consumable->logCheckout(e(Input::get('note')), $user);
         $data['log_id'] = $logaction->id;

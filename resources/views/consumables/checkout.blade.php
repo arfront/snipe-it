@@ -15,6 +15,7 @@
     <form class="form-horizontal" method="post" action="" autocomplete="off">
       <!-- CSRF Token -->
       <input type="hidden" name="_token" value="{{ csrf_token() }}" />
+      <input type="hidden" name="max_num" value="{{ $remaining }}" />
 
       <div class="box box-default">
 
@@ -66,6 +67,16 @@
                 </div>
               </div>
             @endif
+
+          <!-- Remaining -->
+            <div class="form-group {{ $errors->has('num') ? 'error' : '' }}">
+              <label class="col-md-3 control-label">领取数量</label>
+              <div class="col-md-7">
+                  <input class="form-control" placeholder="当前库存{{$remaining}},不填写则默认领取数量为1" type="text" name="num" id="num" value="{{ Input::old('num', $consumable->num) }}" />
+                {!! $errors->first('num', '<span class="alert-msg"><i class="fa fa-times"></i> :message</span>') !!}
+              </div>
+            </div>
+
           <!-- Note -->
           <div class="form-group {{ $errors->has('note') ? 'error' : '' }}">
             <label for="note" class="col-md-3 control-label">{{ trans('admin/hardware/form.notes') }}</label>
