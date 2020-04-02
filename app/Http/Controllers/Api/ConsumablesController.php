@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\Consumable;
 use App\Http\Transformers\ConsumablesTransformer;
 use App\Helpers\Helper;
+use Illuminate\Support\Facades\DB;
 
 class ConsumablesController extends Controller
 {
@@ -170,13 +171,15 @@ class ConsumablesController extends Controller
     {
         $consumable = Consumable::with(array('consumableAssignments'=>
         function ($query) {
-            $query->orderBy($query->getModel()->getTable().'.created_at', 'DESC');
+            $query->orderBy($query->getModel()->getTable().'.created_at', 'DESC')->selectRaw('*, count(*) as sum')->groupBy('created_at');
         },
         'consumableAssignments.admin'=> function ($query) {
         },
         'consumableAssignments.user'=> function ($query) {
         },
         ))->find($consumableId);
+
+        //dd($consumable->consumableAssignments);
 
         if (!Company::isCurrentUserHasAccess($consumable)) {
             return ['total' => 0, 'rows' => []];
@@ -187,6 +190,7 @@ class ConsumablesController extends Controller
         foreach ($consumable->consumableAssignments as $consumable_assignment) {
             $rows[] = [
                 'name' => ($consumable_assignment->user) ? $consumable_assignment->user->present()->nameUrl() : 'Deleted User',
+                'nums' => $consumable_assignment->sum,
                 'created_at' => Helper::getFormattedDateObject($consumable_assignment->created_at, 'datetime'),
                 'admin' => ($consumable_assignment->admin) ? $consumable_assignment->admin->present()->nameUrl() : '',
             ];
@@ -194,6 +198,7 @@ class ConsumablesController extends Controller
 
         $consumableCount = $consumable->users->count();
         $data = array('total' => $consumableCount, 'rows' => $rows);
+
         return $data;
     }
 }

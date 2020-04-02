@@ -259,6 +259,9 @@ class ConsumablesController extends Controller
         $num = Input::get('num');
         $max_num = $_POST['max_num'];
 
+        // 设置提交时间
+        $commit_time = now();
+
         if (isset($num)) if (!is_numeric($num)) {
             return redirect()->route('checkout/consumable', $consumable)->with('error', '请输入数字');
         } elseif ($num <= $max_num) {
@@ -266,7 +269,9 @@ class ConsumablesController extends Controller
                 $consumable->users()->attach($consumable->id, [
                     'consumable_id' => $consumable->id,
                     'user_id' => $admin_user->id,
-                    'assigned_to' => e(Input::get('assigned_to'))
+                    'assigned_to' => e(Input::get('assigned_to')),
+                    'created_at' => $commit_time,
+                    'updated_at' => $commit_time
                 ]);
                 $num--;
             }
@@ -281,7 +286,9 @@ class ConsumablesController extends Controller
         $consumable->users()->attach($consumable->id, [
             'consumable_id' => $consumable->id,
             'user_id' => $admin_user->id,
-            'assigned_to' => e(Input::get('assigned_to'))
+            'assigned_to' => e(Input::get('assigned_to')),
+            'created_at' => $commit_time,
+            'updated_at' => $commit_time
         ]);
 
 
